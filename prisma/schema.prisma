@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  role            String    @default("STUDENT")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  studentProfile  StudentProfile?
+  parentProfile   ParentProfile?
+  adminProfile    AdminProfile?
+  approvals       Approval[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  deleted         Boolean   @default(false)
+}
+
+model AdminProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  fullName         String
+  email            String   @unique
+  mobileNumber     String
+  employeeId       String   @unique
+  hostelName       String
+  signatureImage   String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deleted          Boolean  @default(false)
+}
+
+model StudentProfile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id])
+  fullName            String
+  fatherName          String
+  course              String
+  branch              String
+  rollNumber          String    @unique
+  hostelRoomNumber    String
+  studentMobileNumber String
+  studentIdCardUrl    String
+  studentSelfieUrl    String?
+  adminVerified       Boolean   @default(false)
+  leaveRequests       LeaveRequest[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deleted             Boolean   @default(false)
+}
+
+model ParentProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  parentMobileNumber String
+  parentEmail       String    @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deleted           Boolean   @default(false)
+}
+
+model LeaveRequest {
+  id                String    @id @default(cuid())
+  studentId         String
+  student           StudentProfile @relation(fields: [studentId], references: [id])
+  leaveType         String
+  reason            String
+  destinationAddress String
+  departureDate     DateTime
+  returnDate        DateTime
+  departureTime     String
+  emergencyContact  String
+  transportMode     String
+  status            String    @default("DRAFT") // DRAFT, PENDING_PARENT, PENDING_ADMIN, APPROVED, REJECTED
+  parentStatus      String    @default("PENDING")
+  wardenStatus      String    @default("PENDING")
+  parentVerificationTokenHash String?
+  parentVerificationTokenExpiresAt DateTime?
+  parentOtpHash     String?
+  parentOtpExpiresAt DateTime?
+  parentOtpSentAt   DateTime?
+  parentOtpVerifiedAt DateTime?
+  parentVerifiedAt  DateTime?
+  parentSelfieUrl   String?
+  parentSignatureUrl String?
+  parentDeviceInfo  String?
+  parentIpAddress   String?
+  approvals         Approval[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deleted           Boolean   @default(false)
+}
+
+model Approval {
+  id              String        @id @default(cuid())
+  leaveRequestId  String
+  leaveRequest    LeaveRequest  @relation(fields: [leaveRequestId], references: [id])
+  approverId      String
+  approver        User          @relation(fields: [approverId], references: [id])
+  status          String // PENDING, APPROVED, REJECTED
+  signatureId     String?
+  signature       Signature?    @relation(fields: [signatureId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deleted         Boolean       @default(false)
+}
+
+model Signature {
+  id          String    @id @default(cuid())
+  signature   String // Base64 encoded signature or URL
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  approvals   Approval[]
+  deleted     Boolean   @default(false)
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  message     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleted     Boolean   @default(false)
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  action      String
+  details     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleted     Boolean   @default(false)
+}
+
+model OTPVerification {
+  id          String    @id @default(cuid())
+  email       String
+  otp         String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  deleted     Boolean   @default(false)
+}
+
+model UploadedDocument {
+  id          String    @id @default(cuid())
+  userId      String
+  documentType String
+  url         String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleted     Boolean   @default(false)
+}
+
