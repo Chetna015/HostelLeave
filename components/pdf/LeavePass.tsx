@@ -142,7 +142,8 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   badge: {
-    display: 'inline-block',
+    display: 'flex',
+    alignSelf: 'center',
     backgroundColor: '#ecfdf5',
     color: '#065f46',
     padding: '4px 8px',
@@ -154,6 +155,7 @@ const styles = StyleSheet.create({
 
 interface LeavePassProps {
   leaveRequest: any;
+  qrCodeDataUrl?: string;
 }
 
 export const LeavePass = ({ leaveRequest }: LeavePassProps) => {

@@ -56,6 +56,7 @@ const workflowSteps = [
 
 export default function HomePage() {
   const [activeStep, setActiveStep] = useState(0);
+  const [counts, setCounts] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
 
   useEffect(() => {
     const last = workflowSteps.length - 1;
@@ -63,6 +64,36 @@ export default function HomePage() {
     const t = window.setTimeout(() => setActiveStep((s) => (s === last ? 0 : s + 1)), delay);
     return () => clearTimeout(t);
   }, [activeStep]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchCounts() {
+      try {
+        const res = await fetch('/api/public/summary');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const json = await res.json();
+        if (mounted && json?.summary) {
+          setCounts({
+            total: json.summary.total ?? 0,
+            approved: json.summary.approved ?? 0,
+            pending: json.summary.pending ?? 0,
+            rejected: json.summary.rejected ?? 0,
+          });
+        }
+      } catch (e) {
+        // network or server error - keep previous values
+        console.debug('Could not load public summary', e);
+      }
+    }
+
+    fetchCounts();
+    const id = setInterval(fetchCounts, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -149,17 +180,17 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Live status</p>
-                    <p className="text-2xl font-semibold text-slate-900">Campus Leave Flow</p>
+                    <p className="text-2xl font-semibold text-slate-900">Leave dashboard</p>
                   </div>
                   <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Operational</div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
-                    ['Applications', '128'],
-                    ['Pending', '12'],
-                    ['Approved', '94'],
-                    ['Rejected', '22'],
+                    ['Applications', counts.total.toString()],
+                    ['Pending', counts.pending.toString()],
+                    ['Approved', counts.approved.toString()],
+                    ['Rejected', counts.rejected.toString()],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
                       <p className="text-sm text-slate-600">{label}</p>

@@ -10,6 +10,8 @@ import { LeavePass } from '@/components/pdf/LeavePass';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
+const PDFDownloadLinkAny = PDFDownloadLink as unknown as React.ComponentType<any>;
+
 interface LeavePassData {
   leaveRequest: any;
 }
@@ -93,11 +95,11 @@ export default function LeavePassPage({ params }: { params: { id: string } }) {
           </div>
           <div className="flex gap-2">
             {data && (
-              <PDFDownloadLink
+              <PDFDownloadLinkAny
                 document={<LeavePass leaveRequest={leaveRequest} />}
                 fileName={`LeavePass_${student.rollNumber}_${leaveRequest.id}.pdf`}
               >
-                {({ blob, url, loading: pdfLoading }) => (
+                {({ loading: pdfLoading }: any) => (
                   <Button
                     type="button"
                     className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
@@ -107,7 +109,7 @@ export default function LeavePassPage({ params }: { params: { id: string } }) {
                     {pdfLoading ? 'Preparing...' : 'Download PDF'}
                   </Button>
                 )}
-              </PDFDownloadLink>
+              </PDFDownloadLinkAny>
             )}
           </div>
         </div>
