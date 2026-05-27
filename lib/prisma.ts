@@ -8,19 +8,19 @@ declare global {
 
 // Create a new Prisma client instance if one doesn't exist in the global scope
 // This prevents creating multiple instances of Prisma Client in development
-const directDatabaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL;
 
-if (!directDatabaseUrl) {
-  throw new Error('DIRECT_DATABASE_URL or DATABASE_URL is required');
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required');
 }
 
 const prisma =
-  global.prisma && global.prismaDatabaseUrl === directDatabaseUrl
+  global.prisma && global.prismaDatabaseUrl === databaseUrl
     ? global.prisma
     : new PrismaClient({
         datasources: {
           db: {
-            url: directDatabaseUrl,
+            url: databaseUrl,
           },
         },
       });
@@ -28,7 +28,7 @@ const prisma =
 // In development, store the Prisma client instance in the global scope
 if (process.env.NODE_ENV === 'development') {
   global.prisma = prisma;
-  global.prismaDatabaseUrl = directDatabaseUrl;
+  global.prismaDatabaseUrl = databaseUrl;
 }
 
 export default prisma;

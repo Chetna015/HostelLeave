@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
         ...(process.env.NODE_ENV === 'development'
           ? {
               debugVerificationLink: buildVerificationLink(request.nextUrl.origin, leaveRequest.id, verificationToken),
+              debugOtp: otp,
             }
           : {}),
       },

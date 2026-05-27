@@ -68,27 +68,19 @@ export default function HomePage() {
   useEffect(() => {
     let mounted = true;
 
-    async function fetchCounts() {
+    const load = async () => {
       try {
         const res = await fetch('/api/public/summary');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const json = await res.json();
-        if (mounted && json?.summary) {
-          setCounts({
-            total: json.summary.total ?? 0,
-            approved: json.summary.approved ?? 0,
-            pending: json.summary.pending ?? 0,
-            rejected: json.summary.rejected ?? 0,
-          });
-        }
-      } catch (e) {
-        // network or server error - keep previous values
-        console.debug('Could not load public summary', e);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted) setCounts({ total: data.total ?? 0, approved: data.approved ?? 0, pending: data.pending ?? 0, rejected: data.rejected ?? 0 });
+      } catch (err) {
+        // ignore network errors on the landing page
       }
-    }
+    };
 
-    fetchCounts();
-    const id = setInterval(fetchCounts, 5000);
+    load();
+    const id = window.setInterval(load, 5000);
     return () => {
       mounted = false;
       clearInterval(id);
@@ -180,23 +172,31 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Live status</p>
-                    <p className="text-2xl font-semibold text-slate-900">Leave dashboard</p>
+                    <p className="text-2xl font-semibold text-slate-900">Campus Leave Flow</p>
                   </div>
                   <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">Operational</div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    ['Applications', counts.total.toString()],
-                    ['Pending', counts.pending.toString()],
-                    ['Approved', counts.approved.toString()],
-                    ['Rejected', counts.rejected.toString()],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <p className="text-sm text-slate-600">{label}</p>
-                      <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
-                    </div>
-                  ))}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-600">Applications</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{counts.total}</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-600">Pending</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{counts.pending}</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-600">Approved</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{counts.approved}</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm text-slate-600">Rejected</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{counts.rejected}</p>
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm leading-6 text-sky-700">

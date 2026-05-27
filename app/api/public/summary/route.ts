@@ -10,9 +10,9 @@ export async function GET() {
       prisma.leaveRequest.count({ where: { deleted: false, status: 'REJECTED' } }),
     ]);
 
-    return NextResponse.json({ summary: { total, approved, pending, rejected } });
-  } catch (error) {
-    console.error('Public summary fetch failed', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ total, approved, pending, rejected }, { status: 200 });
+  } catch (err) {
+    console.error('Public summary error:', err);
+    return NextResponse.json({ message: 'Unable to load summary' }, { status: 500 });
   }
 }

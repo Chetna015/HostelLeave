@@ -2,19 +2,26 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  STUDENT
+  PARENT
+  ADMIN
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
   password        String
-  role            String    @default("STUDENT")
+  role            Role      @default(STUDENT)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   studentProfile  StudentProfile?

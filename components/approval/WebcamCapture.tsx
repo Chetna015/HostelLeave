@@ -13,38 +13,91 @@ export const WebcamCapture = ({ onCapture }: WebcamCaptureProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [checking, setChecking] = useState(true);
+
+  const startCamera = async () => {
+    setChecking(true);
+    try {
+      setCameraError(null);
+
+      if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Camera API not supported in this browser.');
+        setChecking(false);
+        return;
+      }
+
+      if (!window.isSecureContext) {
+        setCameraError('Insecure context: camera requires HTTPS or localhost.');
+        setChecking(false);
+        return;
+      }
+
+      // quick device check
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some((d) => d.kind === 'videoinput');
+      if (!hasCamera) {
+        setCameraError('No camera found. Please check that your device has a camera connected.');
+        setChecking(false);
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setCameraReady(true);
+        setRetryCount(0);
+      }
+    } catch (error: any) {
+      const errorName = error?.name || 'Unknown';
+      const errorMsg = error?.message || '';
+
+      if (errorName === 'NotAllowedError' || errorMsg.toLowerCase().includes('permission')) {
+        setCameraError('Camera permission denied. Please enable camera access in your browser settings and try again.');
+      } else if (errorName === 'NotFoundError' || errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('requested device not found')) {
+        setCameraError('No camera found. Please check that your device has a camera connected.');
+      } else {
+        setCameraError('Unable to access camera. Please check permissions and try again.');
+      }
+      setCameraReady(false);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
 
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        streamRef.current = stream;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setCameraReady(true);
-        }
-      } catch {
-        setCameraError('Camera access is required to continue this verification.');
-      }
+    const init = async () => {
+      await startCamera();
     };
 
-    startCamera();
+    if (!cancelled) {
+      init();
+    }
 
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [retryCount]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        setCameraReady(false);
+      } else if (!cameraReady && !cameraError) {
+        // attempt to restart when tab becomes visible
+        setRetryCount((c) => c + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [cameraReady, cameraError]);
 
   const capture = () => {
     const video = videoRef.current;
@@ -99,19 +152,43 @@ export const WebcamCapture = ({ onCapture }: WebcamCaptureProps) => {
         <div className="space-y-3 rounded-2xl bg-rose-50 p-4 text-sm text-rose-700">
           <div>{cameraError}</div>
           <div className="text-slate-700">
-            Upload a selfie image to continue when camera access is unavailable.
+            You can upload a selfie image instead to continue verification.
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFallbackUpload}
-            className="block w-full text-sm text-slate-700 file:mr-4 file:rounded-2xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-white"
-          />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => {
+                streamRef.current?.getTracks().forEach((t) => t.stop());
+                setCameraError(null);
+                setCameraReady(false);
+                setRetryCount((c) => c + 1);
+              }}
+              className="rounded-2xl bg-slate-900 px-4 py-2 text-white transition hover:bg-slate-800"
+            >
+              Retry Camera
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-2xl border border-slate-900 px-4 py-2 text-slate-900 transition hover:bg-slate-50"
+            >
+              Choose File
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFallbackUpload}
+              className="hidden"
+            />
+          </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-3xl bg-slate-950">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-950">
           <video ref={videoRef} className="h-72 w-full object-cover" playsInline muted />
+          {!cameraReady && checking && (
+            <div className="absolute inset-0 flex items-center justify-center text-white">Starting camera…</div>
+          )}
         </div>
       )}
 
@@ -122,7 +199,7 @@ export const WebcamCapture = ({ onCapture }: WebcamCaptureProps) => {
           type="button"
           onClick={capture}
           className="rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={Boolean(cameraError)}
+          disabled={!cameraReady}
         >
           Capture Selfie
         </button>
