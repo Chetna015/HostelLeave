@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const actionSchema = z.object({
   action: z.enum(['APPROVE', 'REJECT']),
 });

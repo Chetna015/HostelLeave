@@ -2,8 +2,11 @@ import { NextRequest } from 'next/server';
 import { renderToStream } from '@react-pdf/renderer';
 import React from 'react';
 import QRCode from 'qrcode';
-import { LeavePass } from '@/components/pdf/LeavePass';
+import { LeavePassDocument } from '@/components/pdf/LeavePassDocument';
 import prisma from '@/lib/prisma';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const leaveRequestId = request.nextUrl.searchParams.get('leaveRequestId');
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const qrCodeDataUrl = await QRCode.toDataURL(leaveRequest.id);
     const pdfStream = await renderToStream(
-      React.createElement(LeavePass, { leaveRequest, qrCodeDataUrl }) as any
+      React.createElement(LeavePassDocument, { leaveRequest, qrCodeDataUrl }) as any
     );
 
     return new Response(pdfStream as unknown as BodyInit, {

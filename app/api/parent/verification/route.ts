@@ -6,6 +6,9 @@ import { buildVerificationLink, generateOtp, generateVerificationToken, hashValu
 import { sendParentNotification } from '@/lib/parent-notification';
 import { uploadVerificationMedia } from '@/lib/media-upload';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const requestSchema = z.object({
   action: z.enum(['SEND_OTP', 'VERIFY_OTP', 'COMPLETE']),
   leaveRequestId: z.string().min(1),

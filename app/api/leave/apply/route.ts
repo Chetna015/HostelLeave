@@ -5,6 +5,9 @@ import jwt from 'jsonwebtoken';
 import { buildVerificationLink, generateOtp, generateVerificationToken, hashValue } from '@/lib/verification';
 import { sendParentNotification } from '@/lib/parent-notification';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const leaveApplicationSchema = z.object({
   leaveType: z.string(),
   reason: z.string(),
